@@ -62,7 +62,9 @@ The `queries.sql` file contains useful SQL queries, including:
 ## 📜 License
 This project is licensed under the **MIT License**. Feel free to modify and use it!
 ---
+
 ## Author
-snehah13
+sneha H
+GitHub: snehah13
 
 
