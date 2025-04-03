@@ -1,0 +1,159 @@
+-- 1. Retrieve all doctors who have not scheduled any appointments
+SELECT * FROM Doctors WHERE DoctorID NOT IN (SELECT DISTINCT DoctorID FROM Appointments);
+
+-- 2. Get the names and contact details of all patients above 60 years old
+SELECT Name, Phone, Address FROM Patients WHERE Age > 30;
+
+-- 3. Find the total number of prescriptions issued by each doctor
+SELECT d.Name, COUNT(p.PrescriptionID) AS PrescriptionCount
+FROM Doctors d
+LEFT JOIN Prescriptions p ON d.DoctorID = p.DoctorID
+GROUP BY d.Name;
+
+-- 4. List all patients who have been admitted and not admitted  but have no appointments
+SELECT * FROM Patients WHERE PatientID NOT IN (SELECT DISTINCT PatientID FROM Appointments);
+SELECT * FROM Patients WHERE PatientID IN (SELECT DISTINCT PatientID FROM Appointments);
+
+-- 5. Retrieve doctors who specialize in 'Cardiologist'
+SELECT * FROM Doctors WHERE Specialty = 'Cardiologist';
+
+-- 6. Get the most common disease among patients
+SELECT Disease, COUNT(*) AS Frequency FROM Patients GROUP BY Disease ORDER BY Frequency DESC LIMIT 1;
+
+-- 7. Find patients who have visited atleast once doctor
+SELECT PatientID, COUNT(DISTINCT DoctorID) AS DoctorVisits
+FROM Appointments
+GROUP BY PatientID
+HAVING COUNT(DISTINCT DoctorID) >=1;
+
+-- 8. List all appointments scheduled for today
+SELECT * FROM Appointments WHERE DATE(AppointmentDate) = SYSDATE();
+
+-- 9. Retrieve the details of the youngest and oldest patients
+SELECT * FROM Patients ORDER BY Age ASC LIMIT 1;
+SELECT * FROM Patients ORDER BY Age DESC LIMIT 1;
+
+-- 10. Find doctors who have prescribed at least 3 different medicines
+SELECT DoctorID, COUNT(DISTINCT Medicine) AS MedicineCount
+FROM Prescriptions
+GROUP BY DoctorID
+HAVING COUNT(DISTINCT Medicine) >= 3;
+
+-- 11. Get the list of patients along with their most recent appointment date
+SELECT p.Name, MAX(a.AppointmentDate) AS LastAppointment
+FROM Patients p
+JOIN Appointments a ON p.PatientID = a.PatientID
+GROUP BY p.Name;
+
+-- 12. Find the total number of appointments per month
+SELECT MONTH(AppointmentDate) AS Month, COUNT(*) AS TotalAppointments
+FROM Appointments
+GROUP BY MONTH(AppointmentDate)
+ORDER BY Month;
+
+-- 13. List all patients who have been admitted but do not have a prescription
+SELECT * FROM Patients WHERE PatientID NOT IN (SELECT DISTINCT PatientID FROM Prescriptions);
+
+-- 14. Retrieve doctors and the number of patients they have prescribed medicines to
+SELECT d.Name, COUNT(DISTINCT p.PatientID) AS PatientsPrescribedTo
+FROM Doctors d
+JOIN Prescriptions p ON d.DoctorID = p.DoctorID
+GROUP BY d.Name;
+
+-- 15. Find the patient with the highest number of appointments
+SELECT p.Name, COUNT(a.AppointmentID) AS AppointmentCount
+FROM Patients p
+JOIN Appointments a ON p.PatientID = a.PatientID
+GROUP BY p.Name
+ORDER BY AppointmentCount DESC
+LIMIT 2;
+
+-- 16. Retrieve all doctors who have prescribed medicine but have no scheduled appointments
+SELECT DISTINCT d.* FROM Doctors d
+JOIN Prescriptions p ON d.DoctorID = p.DoctorID
+WHERE d.DoctorID NOT IN (SELECT DISTINCT DoctorID FROM Appointments WHERE Status = 'Scheduled');
+
+-- 17. Find the average age of patients
+SELECT AVG(Age) AS AverageAge FROM Patients;
+
+-- 18. Count the number of doctors by specialty
+SELECT Specialty, COUNT(*) AS DoctorCount FROM Doctors GROUP BY Specialty;
+
+-- 19. Retrieve the latest prescription given
+SELECT * FROM Prescriptions ORDER BY PrescriptionID DESC LIMIT 1;
+
+-- 20. Find the doctor who has seen the most unique patients
+SELECT d.Name, COUNT(DISTINCT a.PatientID) AS UniquePatients
+FROM Doctors d
+JOIN Appointments a ON d.DoctorID = a.DoctorID
+GROUP BY d.Name
+ORDER BY UniquePatients DESC
+LIMIT 1;
+
+
+-- 21. Retrieve the second most prescribed medicine using a subquery
+SELECT Medicine FROM (
+    SELECT Medicine, COUNT(*) AS PrescriptionCount
+    FROM Prescriptions
+    GROUP BY Medicine
+    ORDER BY PrescriptionCount DESC
+    LIMIT 1 OFFSET 1
+) AS SecondMostPrescribed;
+
+
+-- 22. Find the top 3 doctors with the most appointments
+SELECT d.Name, COUNT(a.AppointmentID) AS AppointmentCount
+FROM Doctors d
+JOIN Appointments a ON d.DoctorID = a.DoctorID
+GROUP BY d.Name
+ORDER BY AppointmentCount DESC
+LIMIT 3;
+
+
+-- 23. Retrieve patients who have the maximum number of prescriptions using a subquery
+SELECT * FROM Patients WHERE PatientID IN (
+    SELECT PatientID FROM Prescriptions 
+    GROUP BY PatientID 
+    HAVING COUNT(PrescriptionID) = (SELECT MAX(PrescriptionCount) FROM (
+        SELECT COUNT(PrescriptionID) AS PrescriptionCount FROM Prescriptions GROUP BY PatientID
+    ) AS Counts)
+);
+
+-- 24. Find the average number of appointments per doctor using a window function
+1.SELECT DoctorID, Name, AVG(AppointmentCount) 
+       OVER () AS AvgAppointmentsPerDoctor
+FROM (
+    SELECT d.DoctorID, d.Name, COUNT(a.AppointmentID) AS AppointmentCount
+    FROM Doctors d
+    LEFT JOIN Appointments a ON d.DoctorID = a.DoctorID
+    GROUP BY d.DoctorID, d.Name
+) AS DoctorAppointments;
+
+2.SELECT AVG(AppointmentCount) AS AvgAppointmentsPerDoctor
+FROM (
+    SELECT d.DoctorID, d.Name, COUNT(a.AppointmentID) AS AppointmentCount
+    FROM Doctors d
+    LEFT JOIN Appointments a ON d.DoctorID = a.DoctorID
+    GROUP BY d.DoctorID, d.Name
+) AS DoctorAppointments;
+
+
+-- 25. Get the most recent appointment for each patient using a window function
+SELECT PatientID, Name, AppointmentDate FROM (
+    SELECT p.PatientID, p.Name, a.AppointmentDate,
+           ROW_NUMBER() OVER (PARTITION BY p.PatientID ORDER BY a.AppointmentDate DESC) AS RowNum
+    FROM Patients p
+    JOIN Appointments a ON p.PatientID = a.PatientID
+) AS RankedAppointments WHERE RowNum = 1;
+
+
+SELECT p.PatientID, p.Name, a.AppointmentDate
+FROM Patients p
+JOIN Appointments a 
+ON p.PatientID = a.PatientID
+WHERE a.AppointmentDate = (
+    SELECT MAX(AppointmentDate) 
+    FROM Appointments 
+    WHERE PatientID = p.PatientID
+);
+
