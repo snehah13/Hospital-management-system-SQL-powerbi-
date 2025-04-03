@@ -59,6 +59,10 @@ The `queries.sql` file contains useful SQL queries, including:
 - **Medical Prescriptions**
 - **Comprehensive SQL Queries**
 
+## Dashboard 
+![hospital_dashboard_screenshot](https://github.com/user-attachments/assets/08807e72-a071-451e-92a8-d1bfb66dfa02)
+
+
 ## 📜 License
 This project is licensed under the **MIT License**. Feel free to modify and use it!
 ---
